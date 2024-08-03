@@ -10,13 +10,17 @@ public class Principal {
 		
 		final StringBuilder sb = new StringBuilder("Hola");
 		
-		sb.append(" Mundo");
+		sb.append(" Mundo").append(" Java");
+		
+		//sb = new StringBuilder("A");
 		
 		//sb = null;
 		
 		System.out.println(sb);
 		
 		final String s = "Hello";
+		
+		//s = "Hola";
 		
 		//s = null;
 		

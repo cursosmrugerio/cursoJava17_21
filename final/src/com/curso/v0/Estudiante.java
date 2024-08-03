@@ -24,4 +24,8 @@ public class Estudiante{
 		System.out.println("Aplicar prueba");
 	}
 	
+	final static void staticAplicarTest() {
+		System.out.println("Static Aplicar prueba");
+	}
+	
 }
