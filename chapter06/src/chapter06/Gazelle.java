@@ -1,4 +1,4 @@
-package com.chapter06;
+package chapter06;
 
 class Antelope {
 	public Antelope(int p) {
@@ -8,6 +8,7 @@ class Antelope {
 	{
 		System.out.print("2");
 	}
+	
 	static {
 		System.out.print("1");
 	}
@@ -20,12 +21,14 @@ public class Gazelle extends Antelope {
 	}
 
 	public static void main(String hopping[]) {
+		//System.out.println("HelloWorld"); //18HelloWorld
 		new Gazelle(0); //182493
 	}
 
 	static {
 		System.out.print("8");
 	}
+
 	{
 		System.out.print("9");
 	}
