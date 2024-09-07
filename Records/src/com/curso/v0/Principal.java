@@ -12,6 +12,9 @@ public class Principal {
 		//Chameleon cham = new Chameleon();
 		System.out.println(Chameleon.getName());
 		
+		BeardedDragon bd = new BeardedDragon(false);
+		System.out.println(bd.fun());
+		
 	}
 
 }
