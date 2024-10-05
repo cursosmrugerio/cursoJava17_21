@@ -5,10 +5,26 @@ public interface Predicado<T> {
 	
 	boolean probar(T t);
 	
-	String toString();
+	static void showStatic() { //public
+		System.out.println("Method Static");
+		showStaticPrivate();
+	}
 	
-	boolean equals(Object o);
+	private static void showStaticPrivate() {
+		System.out.println("Method Static private");
+	}
 	
-	int hashCode();
+	default void showDefault() { //public
+		System.out.println("Method Default");
+		showDefaultPrivate();
+	}
+	
+	private void showDefaultPrivate() {
+		System.out.println("Method private");
+	}
+	
+	static <T> Predicado<T> returnPredicate(){
+		return x -> true;
+	}
 	
 }
