@@ -11,6 +11,11 @@ public class Question10 {
 
 	public void remove(List<Character> chars) {
 
+		//char start = 'a';
+		//char c = 'x';
+		chars = null;
+		
+		
 		char end = 'z';
 		
 		Predicate<Character> predicate = c -> {
@@ -20,7 +25,7 @@ public class Question10 {
 
 		// INSERT LINE HERE
 		char start = 'a';
-		char c = 'x';
+		//char c = 'x';
 		chars = null;
 		//end = '1';
 
