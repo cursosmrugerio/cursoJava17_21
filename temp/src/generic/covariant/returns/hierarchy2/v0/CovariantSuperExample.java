@@ -1,4 +1,4 @@
-package generic.covariant.returns.hierarchy2;
+package generic.covariant.returns.hierarchy2.v0;
 
 import java.util.ArrayList;
 import java.util.List;

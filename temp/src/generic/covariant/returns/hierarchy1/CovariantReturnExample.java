@@ -12,7 +12,6 @@ class A<T> {
     }
 }
 
-
 public class CovariantReturnExample {
 
     public static void main(String[] args) {
@@ -51,12 +50,3 @@ class Hijo extends Padre{
 		return null;
 	}
 }
-
-
-
-
-
-
-
-
-
