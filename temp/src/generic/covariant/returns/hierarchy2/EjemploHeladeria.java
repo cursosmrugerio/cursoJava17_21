@@ -1,14 +1,11 @@
 package generic.covariant.returns.hierarchy2;
 
 //Primero definimos los tipos de helados
-class Helado {
-}
+class Helado {}
 
-class HeladoCrema extends Helado {
-}
+class HeladoCrema extends Helado {}
 
-class HeladoChocolate extends HeladoCrema {
-}
+class HeladoChocolate extends HeladoCrema {}
 
 //Definimos un recipiente genérico para helados
 class RecipienteHelado<T> {
@@ -17,7 +14,6 @@ class RecipienteHelado<T> {
 	public void poner(T helado) {
 		this.contenido = helado;
 	}
-
 	public T obtener() {
 		return contenido;
 	}
@@ -26,7 +22,7 @@ class RecipienteHelado<T> {
 public class EjemploHeladeria {
 	public static void main(String[] args) {
 		// Creamos diferentes tipos de helados
-		Helado heladoSimple = new Helado();
+		Helado helado = new Helado();
 		HeladoCrema heladoCrema = new HeladoCrema();
 		HeladoChocolate heladoChocolate = new HeladoChocolate();
 
@@ -39,11 +35,11 @@ public class EjemploHeladeria {
 		// Demostramos que podemos poner diferentes tipos de helados
 		recipienteCrema.poner(heladoCrema); // ✅ Funciona
 		recipienteCrema.poner(heladoChocolate); // ✅ Funciona
-		// recipienteCrema.poner(heladoSimple); // ❌ No funciona
+		// recipienteCrema.poner(helado); // ❌ No funciona
 
 		// recipienteChocolate.poner(heladoCrema); // ❌ No funciona
 		recipienteChocolate.poner(heladoChocolate); // ✅ Funciona
-		// recipienteChocolate.poner(heladoSimple); // ❌ No funciona
+		// recipienteChocolate.poner(helado); // ❌ No funciona
 		
 		servirHeladoOne(new RecipienteHelado<Helado>());
 		servirHeladoOne(new RecipienteHelado<HeladoCrema>());
