@@ -1,6 +1,4 @@
-package com.linkedin.generics;
-
-import gen02_05e.Boxable;
+package gen03_06e;
 
 public class Book implements Boxable{
     private String name;
