@@ -1,0 +1,35 @@
+package covariant.rule1.v0;
+
+import java.util.*;
+
+class Abuelo {
+	List<? extends Number> execute() {
+		return null;
+	}
+}
+
+class Papa extends Abuelo {
+	@Override
+	List<? extends Long> execute() {
+		return null;
+	}
+}
+
+class Hijo extends Papa {
+	@Override
+	List<Long> execute() {
+		return null;
+	}
+}
+
+
+public class Principal {
+	
+	public static void main(String[] args) {
+		
+	}
+	
+	
+	
+
+}
