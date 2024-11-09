@@ -9,13 +9,13 @@ class HeladoChocolate extends HeladoCrema {}
 
 //Definimos un recipiente genérico para helados
 class RecipienteHelado<T> {
-	private T contenido;
+	private T contenidoHelado;
 
 	public void poner(T helado) {
-		this.contenido = helado;
+		this.contenidoHelado = helado;
 	}
 	public T obtener() {
-		return contenido;
+		return contenidoHelado;
 	}
 }
 
@@ -25,35 +25,67 @@ public class EjemploHeladeria {
 		Helado helado = new Helado();
 		HeladoCrema heladoCrema = new HeladoCrema();
 		HeladoChocolate heladoChocolate = new HeladoChocolate();
+		
+		// Un recipiente que puede contener Helado o cualquier supertipo
+		RecipienteHelado<? super Helado> recipienteHelado;
+		
+		recipienteHelado = new RecipienteHelado<Object>(); // ✅ Funciona
+		recipienteHelado = new RecipienteHelado<Helado>(); // ✅ Funciona
+//		recipienteHelado = new RecipienteHelado<HeladoCrema>(); // ❌ No funciona
+//		recipienteHelado = new RecipienteHelado<HeladoChocolate>(); // ❌ No funciona
 
 		// Un recipiente que puede contener HeladoCrema o cualquier supertipo
-		RecipienteHelado<? super HeladoCrema> recipienteCrema = new RecipienteHelado<Helado>();
+		RecipienteHelado<? super HeladoCrema> recipienteCrema;
+		
+//		recipienteCrema = new RecipienteHelado<Object>(); // ✅ Funciona
+//		recipienteCrema = new RecipienteHelado<Helado>(); // ✅ Funciona
+//		recipienteCrema = new RecipienteHelado<HeladoCrema>(); // ✅ Funciona
+//		recipienteCrema = new RecipienteHelado<HeladoChocolate>(); // ❌ No funciona
+		
+		recipienteCrema = recipienteHelado; // ¡Esto funciona!
 
 		// Un recipiente que puede contener HeladoChocolate o cualquier supertipo
-		RecipienteHelado<? super HeladoChocolate> recipienteChocolate = recipienteCrema; // ¡Esto funciona!
+		RecipienteHelado<? super HeladoChocolate> recipienteChocolate;
+		
+		recipienteChocolate = new RecipienteHelado<Object>(); // ✅ Funciona
+		recipienteChocolate = new RecipienteHelado<Helado>(); // ✅ Funciona
+		recipienteChocolate = new RecipienteHelado<HeladoCrema>(); // ✅ Funciona
+		recipienteChocolate = new RecipienteHelado<HeladoChocolate>(); // ✅ Funciona
+		
+		recipienteChocolate = recipienteCrema; // ¡Esto funciona!
 
 		// Demostramos que podemos poner diferentes tipos de helados
+		recipienteHelado.poner(helado); // ✅ Funciona
+		recipienteHelado.poner(heladoCrema); // ✅ Funciona
+		recipienteHelado.poner(heladoChocolate); // ✅ Funciona
+		
+		// recipienteCrema.poner(helado); // ❌ No funciona
 		recipienteCrema.poner(heladoCrema); // ✅ Funciona
 		recipienteCrema.poner(heladoChocolate); // ✅ Funciona
-		// recipienteCrema.poner(helado); // ❌ No funciona
 
+		// recipienteChocolate.poner(helado); // ❌ No funciona
 		// recipienteChocolate.poner(heladoCrema); // ❌ No funciona
 		recipienteChocolate.poner(heladoChocolate); // ✅ Funciona
-		// recipienteChocolate.poner(helado); // ❌ No funciona
 		
+		//              RecipienteHelado<? super Helado>
 		servirHeladoOne(new RecipienteHelado<Helado>());
-		servirHeladoOne(new RecipienteHelado<HeladoCrema>());
-		
+		//servirHeladoOne(new RecipienteHelado<HeladoCrema>()); // ❌ No funciona
+		//servirHeladoOne(new RecipienteHelado<HeladoChocolate>());//❌ No funciona
+	
+		//              RecipienteHelado<? super HeladoCrema>
 		servirHeladoTwo(new RecipienteHelado<Helado>());
+		servirHeladoTwo(new RecipienteHelado<HeladoCrema>());
+		//servirHeladoTwo(new RecipienteHelado<HeladoChocolate>()); //❌ No funciona
 		
+		//                RecipienteHelado<? super HeladoChocolate>
 		servirHeladoThree(new RecipienteHelado<Helado>());
-		//servirHeladoThree(new RecipienteHelado<HeladoCrema>()); // ❌ No funciona
+		servirHeladoThree(new RecipienteHelado<HeladoCrema>());
+		servirHeladoThree(new RecipienteHelado<HeladoChocolate>());
 	}
 
-	// Métodos que demuestran el uso práctico
-	public static void servirHeladoOne(RecipienteHelado<? super HeladoChocolate> recipiente) {
-		// recipiente.poner(new Helado()); // ❌ No funciona
-		// recipiente.poner(new HeladoCrema()); // ❌ No funciona
+	public static void servirHeladoOne(RecipienteHelado<? super Helado> recipiente) {
+		recipiente.poner(new Helado()); // // ✅ Funciona
+		recipiente.poner(new HeladoCrema()); // ✅ Funciona
 		recipiente.poner(new HeladoChocolate()); // ✅ Funciona
 	}
 
@@ -63,9 +95,11 @@ public class EjemploHeladeria {
 		recipiente.poner(new HeladoChocolate()); // ✅ Funciona
 	}
 	
-	public static void servirHeladoThree(RecipienteHelado<? super Helado> recipiente) {
-		recipiente.poner(new Helado()); // // ✅ Funciona
-		recipiente.poner(new HeladoCrema()); // ✅ Funciona
+	// Métodos que demuestran el uso práctico
+	public static void servirHeladoThree(RecipienteHelado<? super HeladoChocolate> recipiente) {
+		// recipiente.poner(new Helado()); // ❌ No funciona
+		// recipiente.poner(new HeladoCrema()); // ❌ No funciona
 		recipiente.poner(new HeladoChocolate()); // ✅ Funciona
 	}
+
 }
