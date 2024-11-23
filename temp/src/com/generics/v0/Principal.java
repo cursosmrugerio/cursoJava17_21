@@ -20,6 +20,6 @@ public class Principal {
 		return new B();
 	}
 	
-	//<X> void fifth(List<X super B> list) { }
+	//<X> void fifth(List<X super B> list) { } //DOES NOT COMPILE
 
 }

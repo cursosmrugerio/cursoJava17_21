@@ -17,7 +17,7 @@ class Cliente implements Comparable<Cliente> {
 
 	@Override
 	public int compareTo(Cliente o) {
-		return this.name.compareTo(o.name);
+		return o.name.compareTo(this.name);
 	}
 	
 }
@@ -42,6 +42,14 @@ public class Principal {
 		
 		map.forEach((k,v) -> System.out.println(
 					"Key:"+ k + ", Value: " + v));
+		
+		System.out.println("*******");
+		
+		map.values().forEach(System.out::println);
+		
+		System.out.println("*******");
+		
+		map.keySet().forEach(System.out::println);
 		
 
 	}
