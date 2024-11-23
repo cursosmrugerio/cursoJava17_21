@@ -14,7 +14,6 @@ class Cliente{
 		return "Cliente [name=" + name + "]";
 	}
 	
-	
 }
 
 public class Principal {
@@ -30,6 +29,8 @@ public class Principal {
 		System.out.println(clientes.remove(new Cliente("Epeneto")));
 		
 		System.out.println(clientes); 
+		
+		System.out.println(clientes.contains(new Cliente("Epeneto"))); //false
 
 	}
 

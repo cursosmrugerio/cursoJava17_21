@@ -1,4 +1,4 @@
-package com.curso.v2;
+package com.curso.set.v1;
 
 import java.util.*;
 
@@ -15,6 +15,12 @@ class Cliente{
 	}
 
 	@Override
+	public int hashCode() {
+		//return 99;
+		return Objects.hash(name);
+	}
+
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
@@ -26,28 +32,22 @@ class Cliente{
 		return Objects.equals(name, other.name);
 	}
 
-	
+
 }
 
 public class Principal {
 
 	public static void main(String[] args) {
+		Set<Cliente> setCliente = new HashSet<>();
+		setCliente.add(new Cliente("Patrobas"));
+		setCliente.add(new Cliente("Aristobulo"));
+		setCliente.add(new Cliente("Herodion"));
+		System.out.println(
+				setCliente.add(new Cliente("Patrobas")));
 		
-		System.out.println("V2");
-		
-		Collection<Cliente> clientes = new ArrayList<>();
-		
-		clientes.add(new Cliente("Epeneto"));
-		clientes.add(new Cliente("Epeneto"));
+		setCliente.forEach(System.out::println);
 
-		System.out.println(clientes.remove(new Cliente("Patrobas")));
-		System.out.println(clientes.remove(new Cliente("Epeneto")));
 		
-		System.out.println(clientes); 
-		
-		System.out.println(clientes.contains(new Cliente("Epeneto"))); //true
-
-
 	}
 
 }
