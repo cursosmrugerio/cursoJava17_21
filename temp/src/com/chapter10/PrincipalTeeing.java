@@ -17,7 +17,9 @@ public class PrincipalTeeing {
 						          Collectors.joining(","), 
 						          (s, c) -> new Separations(s, c)));
 		
-		System.out.println(result);
+		System.out.println(result.spaceSeparated());
+		System.out.println(result.commaSeparated());
+
 
 	}
 
