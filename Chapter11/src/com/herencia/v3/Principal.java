@@ -13,5 +13,13 @@ class Aguila extends Ave{
 }
 
 public class Principal {
-
+	public static void main(String[] args) {
+		Ave ave = new Ave();
+		
+		try {
+			Ave aguila = new Aguila();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }
