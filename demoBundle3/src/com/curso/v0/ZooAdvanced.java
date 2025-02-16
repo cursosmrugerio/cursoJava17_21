@@ -4,8 +4,6 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Properties;
 import java.text.MessageFormat;
-import java.io.FileInputStream;
-import java.io.IOException;
 
 public class ZooAdvanced {
     private static Properties configProps = new Properties();

@@ -1,6 +1,7 @@
 package com.curso.v0;
 
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
 
@@ -35,7 +36,7 @@ public class ZooApp {
             System.out.println(visitors);
             System.out.println(numVisitantes);
             
-        } catch (Exception e) {
+        } catch (MissingResourceException e) {
         	//e.printStackTrace();
             System.out.println("Error loading resource bundle: " + e.getMessage());
         }

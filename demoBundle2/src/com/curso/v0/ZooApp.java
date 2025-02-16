@@ -34,7 +34,8 @@ public class ZooApp {
             System.out.println(visitors);
             
             String greetingPattern = bundle.getString("greeting");
-            String formattedGreeting = MessageFormat.format(greetingPattern, "Juan", name);
+            String formattedGreeting = 
+            		MessageFormat.format(greetingPattern, "Juan", name);
             System.out.println(formattedGreeting);
             
         } catch (Exception e) {
