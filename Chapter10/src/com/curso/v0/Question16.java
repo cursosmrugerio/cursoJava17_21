@@ -15,7 +15,7 @@ public class Question16 {
 		Predicate<String> empty = String::isEmpty;
 		Predicate<String> notEmpty = empty.negate();
 		
-		Map<Boolean,List<String>> map =Stream.generate(() -> "")
+		Map<Boolean,List<String>> map = Stream.generate(() -> "")
 		.limit(10)
 		.filter(notEmpty)
 		.collect(Collectors.groupingBy(k -> k)) //Map<String,List<String>>
