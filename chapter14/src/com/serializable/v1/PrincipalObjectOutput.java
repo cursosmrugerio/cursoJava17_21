@@ -15,7 +15,6 @@ public class PrincipalObjectOutput {
 		String currentDir = System.getProperty("user.dir");
 		File file = new File(currentDir + "/data/chimpanzees.data");
 
-		// Crear una lista de 10 gorilas
 		List<Chimpanzee> chimpanzees = new ArrayList<>();
 
 		chimpanzees.add(new Chimpanzee("Ham", 2, 'A'));
@@ -27,7 +26,9 @@ public class PrincipalObjectOutput {
 	}
 
 	static void saveToFile(List<Chimpanzee> chimpanzees, File dataFile) throws IOException {
-		try (var out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(dataFile)))) {
+		try (var out = new ObjectOutputStream(
+				       new BufferedOutputStream(
+				       new FileOutputStream(dataFile)))) {
 
 			for (Chimpanzee chimpanze : chimpanzees)
 

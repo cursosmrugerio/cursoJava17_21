@@ -25,6 +25,13 @@ public class Principal01 {
 		
 	}
 
+	static void copyStream(InputStream in, OutputStream out) throws IOException {
+		int b;
+		while ((b = in.read()) != -1) {
+			out.write(b);
+		}
+		out.flush();
+	}
 
 	static void copyStream(Reader in, Writer out) throws IOException {
 		int b;
@@ -34,12 +41,6 @@ public class Principal01 {
 		out.flush();
 	}
 	
-	static void copyStream(InputStream in, OutputStream out) throws IOException {
-		int b;
-		while ((b = in.read()) != -1) {
-			out.write(b);
-		}
-		out.flush();
-	}
+	
 
 }

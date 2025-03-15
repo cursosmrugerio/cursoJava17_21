@@ -1,4 +1,4 @@
-package com.serializable.v1;
+package com.serializable.v2;
 
 import java.io.BufferedInputStream;
 import java.io.EOFException;
@@ -14,29 +14,29 @@ public class PrincipalObjectInput {
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 
 		String currentDir = System.getProperty("user.dir");
-		File file = new File(currentDir + "/data/chimpanzees.data");
+		File file = new File(currentDir + "/data/gorillas.data");
 
-		var chimpanzees = readFromFile(file);
+		List<Gorilla> gorillas = readFromFile(file);
 		
-		chimpanzees.forEach(System.out::println);
+		gorillas.forEach(System.out::println);
 		
 		System.out.println("Listo!!!");
 	}
 
-	static List<Chimpanzee> readFromFile(File dataFile) throws IOException, ClassNotFoundException {
+	static List<Gorilla> readFromFile(File dataFile) throws IOException, ClassNotFoundException {
 
-		var chimpanzees = new ArrayList<Chimpanzee>();
+		var gorillas = new ArrayList<Gorilla>();
 
 		try (var in = new ObjectInputStream(
 				      new BufferedInputStream(
 				      new FileInputStream(dataFile)))) {
 			while (true) {
 				var object = in.readObject();
-				if (object instanceof Chimpanzee g)
-					chimpanzees.add(g);
+				if (object instanceof Gorilla g)
+					gorillas.add(g);
 			}
 		} catch (EOFException e) {
-			return chimpanzees;
+			return gorillas;
 		}
 
 	}

@@ -1,10 +1,11 @@
 package com.curso.streams.v1;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 public class PrincipalPath03 {
 
@@ -22,8 +23,8 @@ public class PrincipalPath03 {
 
 	static private void copyPath(Path input, Path output) throws IOException {
 
-		try (var reader = Files.newBufferedReader(input); 
-			 var writer = Files.newBufferedWriter(output)) {
+		try (BufferedReader reader = Files.newBufferedReader(input); 
+			 BufferedWriter writer = Files.newBufferedWriter(output)) {
 
 			String line = null;
 

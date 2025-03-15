@@ -21,12 +21,12 @@ public class PrincipalPath02 {
 
 	static private void readLazily(Path path) throws IOException {
 		try (Stream<String> s = Files.lines(path)) {
-			s.forEach(System.out::println);
+			s.forEach(System.out::println); //Lazzy
 		}
 	}
 
 	static private void readLazilyOther(Path path) throws IOException {
-		try (var s = Files.lines(path)) {
+		try (Stream<String> s = Files.lines(path)) {
 			s.filter(f -> f.startsWith("WARN:"))
 			 .map(f -> f.substring(5))
 			 .forEach(System.out::println);

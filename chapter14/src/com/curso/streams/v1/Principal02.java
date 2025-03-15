@@ -23,6 +23,7 @@ public class Principal02 {
 		var buffer = new byte[batchSize];
 		int lengthRead;
 		while ((lengthRead = in.read(buffer, 0, batchSize)) > 0) {
+			//System.out.println("lengthRead: "+lengthRead);
 			out.write(buffer, 0, lengthRead);
 			out.flush();
 		}
