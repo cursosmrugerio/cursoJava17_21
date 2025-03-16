@@ -4,6 +4,7 @@ tmp/
 */build/classes
 *.tmp
 *.bak
+*.class
 *.swp
 *~.nib
 local.properties
