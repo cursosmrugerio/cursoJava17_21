@@ -8,6 +8,8 @@ public class PrincipalConsole0 {
 		Console console = System.console();
 		if (console != null) {
 
+			System.out.println("Inicio");
+			
 			String userInput = console.readLine();
 			console.writer().println("You entered: " + userInput);
 			

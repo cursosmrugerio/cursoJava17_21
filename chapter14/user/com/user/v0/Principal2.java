@@ -8,7 +8,7 @@ public class Principal2 {
 
 	public static void main(String[] args) throws IOException {
 
-		var reader = new BufferedReader(new InputStreamReader(System.in));
+		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		
 		try (reader) {}
 		String data = reader.readLine(); // IOException

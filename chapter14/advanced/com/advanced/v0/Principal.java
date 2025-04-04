@@ -14,6 +14,8 @@ public class Principal {
         File file = new File(currentDir + "/data/texto.txt");
 
 		InputStream is = new BufferedInputStream(new FileInputStream(file));
+		//InputStream is = new FileInputStream(file);
+
 		
 		readData(is);
 	}

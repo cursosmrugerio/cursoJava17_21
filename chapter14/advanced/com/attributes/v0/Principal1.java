@@ -25,9 +25,9 @@ public class Principal1 {
 		
 		
 		// Volver a leer los atributos para verificar el cambio
-	    //BasicFileAttributes newAttributes = view.readAttributes();
-	    //FileTime updatedTime = newAttributes.lastModifiedTime();
+	    BasicFileAttributes newAttributes = view.readAttributes();
+	    FileTime updatedTime = newAttributes.lastModifiedTime();
 	    // Mostrar el nuevo tiempo de última modificación
-	    //System.out.println("Nuevo tiempo de última modificación: " + updatedTime);
+	    System.out.println("Nuevo tiempo de última modificación: " + updatedTime);
 	}
 }
