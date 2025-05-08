@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación Animada Ciclo de Vida Hilos Java</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column; /* Align items vertically */
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .simulation-container {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .cpu-area, .threads-area {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+        }
+        h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #555;
+        }
+        .cpu {
+            width: 80px;
+            height: 50px;
+            background-color: #ffcc80; /* Light orange */
+            border: 2px solid #ffa726; /* Orange */
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px auto;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .cpu.occupied {
+             background-color: #ef5350; /* Red */
+             border-color: #d32f2f;
+             color: white;
+        }
+        .thread {
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #e3f2fd; /* Light blue */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.3s ease;
+        }
+        .thread-info {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .thread-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .thread-state {
+            font-style: italic;
+            padding: 3px 6px;
+            border-radius: 3px;
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            min-width: 90px; /* Ensure states have similar width */
+            display: inline-block;
+        }
+        .thread-progress-bar {
+            width: 100px;
+            height: 10px;
+            background-color: #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .thread-progress {
+            height: 100%;
+            background-color: #4caf50; /* Green */
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* State Colors */
+        .state-NEW { background-color: #ce93d8; } /* Purple */
+        .state-RUNNABLE { background-color: #90caf9; } /* Blue */
+        .state-RUNNING { background-color: #81c784; } /* Green */
+        .state-TIMED_WAITING { background-color: #fff59d; color: #555; } /* Yellow */
+        .state-BLOCKED { background-color: #ef9a9a; } /* Red */
+        .state-WAITING { background-color: #ffcc80; color: #555;} /* Orange */
+        .state-TERMINATED { background-color: #bdbdbd; } /* Grey */
+
+        /* Log Area */
+        .log-area {
+            height: 150px;
+            overflow-y: scroll;
+            border: 1px solid #eee;
+            padding: 10px;
+            font-size: 12px;
+            background-color: #fafafa;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin-bottom: 4px;
+            border-bottom: 1px dotted #eee;
+            padding-bottom: 2px;
+        }
+        .log-time { color: #999; margin-right: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <h1>Simulación Ciclo de Vida Hilos Java</h1>
+
+    <div class="simulation-container">
+        <div class="controls">
+            <button id="startButton">Iniciar Simulación</button>
+            <button id="resetButton">Reiniciar</button>
+            <label for="speedSlider">Velocidad:</label>
+            <input type="range" id="speedSlider" min="100" max="2000" value="500" step="100">
+        </div>
+
+        <div class="cpu-area">
+            <h3>CPU</h3>
+            <div id="cpu" class="cpu">Libre</div>
+        </div>
+
+        <div class="threads-area">
+            <h3>Hilos</h3>
+            <div id="threadsContainer">
+                <!-- Threads will be added here by JavaScript -->
+            </div>
+        </div>
+
+        <div class="log-area" id="logArea">
+            <h3>Log de Eventos</h3>
+            <!-- Log entries will be added here -->
+        </div>
+    </div>
+
+    <script>
+        const threadsContainer = document.getElementById('threadsContainer');
+        const cpuElement = document.getElementById('cpu');
+        const logArea = document.getElementById('logArea');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const speedSlider = document.getElementById('speedSlider');
+
+        let simulationInterval;
+        let threads = [];
+        let simulationTime = 0;
+        let timeSlice = 500; // ms, initial speed
+        let cpuAvailable = true;
+        let runningThreadId = null;
+        let threadIdCounter = 0;
+
+        const THREAD_STATES = {
+            NEW: 'NEW',
+            RUNNABLE: 'RUNNABLE',
+            RUNNING: 'RUNNING',
+            TIMED_WAITING: 'TIMED_WAITING',
+            BLOCKED: 'BLOCKED', // Placeholder for future
+            WAITING: 'WAITING', // Placeholder for future
+            TERMINATED: 'TERMINATED'
+        };
+
+        function log(message) {
+            const entry = document.createElement('div');
+            entry.classList.add('log-entry');
+            const timeSpan = document.createElement('span');
+            timeSpan.classList.add('log-time');
+            timeSpan.textContent = `[${(simulationTime / 1000).toFixed(1)}s]`;
+            entry.appendChild(timeSpan);
+            entry.appendChild(document.createTextNode(message));
+            // logArea.appendChild(entry);
+            logArea.insertBefore(entry, logArea.querySelector('.log-entry')); // Add to top
+            // Keep log area scrolled to top (optional: scroll to bottom if preferred)
+            // logArea.scrollTop = 0;
+        }
+
+        function createThreadElement(thread) {
+            const div = document.createElement('div');
+            div.classList.add('thread');
+            div.id = `thread-${thread.id}`;
+            div.innerHTML = `
+                <div class="thread-info">
+                    <div class="thread-name">Hilo ${thread.id} (${thread.name})</div>
+                    <div>Estado: <span class="thread-state state-${thread.state}">${thread.state}</span></div>
+                    <div class="thread-progress-bar">
+                        <div class="thread-progress" style="width: ${thread.progress}%;"></div>
+                    </div>
+                    ${thread.state === THREAD_STATES.TIMED_WAITING ? `<div>Esperando: ${(thread.waitingUntil - simulationTime)/1000}s</div>` : ''}
+                </div>
+            `;
+            return div;
+        }
+
+        function updateThreadElement(thread) {
+            const div = document.getElementById(`thread-${thread.id}`);
+            if (!div) return;
+
+            const stateSpan = div.querySelector('.thread-state');
+            const progressBar = div.querySelector('.thread-progress');
+            const waitingDiv = div.querySelector('.thread-info > div:last-child'); // Get the potential waiting div
+
+            stateSpan.textContent = thread.state;
+            stateSpan.className = `thread-state state-${thread.state}`; // Update class for color
+            progressBar.style.width = `${thread.progress}%`;
+
+            // Remove previous waiting time if it exists and state is not TIMED_WAITING
+            if (waitingDiv && waitingDiv.textContent.startsWith('Esperando') && thread.state !== THREAD_STATES.TIMED_WAITING) {
+                waitingDiv.remove();
+            }
+            // Add waiting time if state is TIMED_WAITING
+            else if (thread.state === THREAD_STATES.TIMED_WAITING && (!waitingDiv || !waitingDiv.textContent.startsWith('Esperando'))) {
+                const newWaitingDiv = document.createElement('div');
+                newWaitingDiv.textContent = `Esperando: ${((thread.waitingUntil - simulationTime)/1000).toFixed(1)}s`;
+                div.querySelector('.thread-info').appendChild(newWaitingDiv);
+            } else if (thread.state === THREAD_STATES.TIMED_WAITING && waitingDiv) {
+                 waitingDiv.textContent = `Esperando: ${Math.max(0,(thread.waitingUntil - simulationTime)/1000).toFixed(1)}s`;
+            }
+
+            // Highlight if running
+            if(thread.state === THREAD_STATES.RUNNING) {
+                div.style.backgroundColor = '#c8e6c9'; // Lighter green
+            } else {
+                div.style.backgroundColor = '#e3f2fd'; // Default light blue
+            }
+        }
+
+        function updateCpuElement() {
+            if (runningThreadId !== null) {
+                cpuElement.textContent = `Hilo ${runningThreadId}`;
+                cpuElement.classList.add('occupied');
+            } else {
+                cpuElement.textContent = 'Libre';
+                cpuElement.classList.remove('occupied');
+            }
+        }
+
+        function initializeThreads() {
+            threads = [
+                {
+                    id: ++threadIdCounter,
+                    name: 'Contador A',
+                    state: THREAD_STATES.NEW,
+                    progress: 0,
+                    totalWork: 10, // Arbitrary units of work
+                    workDone: 0,
+                    waitingUntil: 0, // Timestamp when waiting ends
+                    task: function() { // Simple task simulation
+                        log(`Hilo ${this.id} trabajando...`);
+                        this.workDone++;
+                        this.progress = (this.workDone / this.totalWork) * 100;
+                        // Simulate a potential sleep
+                        if (this.workDone === 3 || this.workDone === 7) {
+                            const sleepDuration = 1500 + Math.random() * 1000; // Sleep for 1.5-2.5s
+                            this.state = THREAD_STATES.TIMED_WAITING;
+                            this.waitingUntil = simulationTime + sleepDuration;
+                            log(`Hilo ${this.id} llama a sleep(${sleepDuration/1000}s). Estado: ${this.state}`);
+                            return true; // Indicate state change happened within task
+                        }
+                        return false;
+                    }
+                },
+                {
+                    id: ++threadIdCounter,
+                    name: 'Impresor B',
+                    state: THREAD_STATES.NEW,
+                    progress: 0,
+                    totalWork: 8,
+                    workDone: 0,
+                    waitingUntil: 0,
+                    task: function() {
+                        log(`Hilo ${this.id} imprimiendo mensaje ${this.workDone + 1}...`);
+                        this.workDone++;
+                        this.progress = (this.workDone / this.totalWork) * 100;
+                        // Simulate a potential sleep
+                        if (this.workDone === 4) {
+                            const sleepDuration = 2000 + Math.random() * 1000; // Sleep for 2-3s
+                            this.state = THREAD_STATES.TIMED_WAITING;
+                            this.waitingUntil = simulationTime + sleepDuration;
+                            log(`Hilo ${this.id} llama a sleep(${sleepDuration/1000}s). Estado: ${this.state}`);
+                            return true; // Indicate state change happened within task
+                        }
+                        return false;
+                    }
+                }
+            ];
+
+            threadsContainer.innerHTML = ''; // Clear previous threads
+            threads.forEach(thread => {
+                threadsContainer.appendChild(createThreadElement(thread));
+                log(`Hilo ${thread.id} creado. Estado: ${thread.state}`);
+            });
+        }
+
+        function startSimulation() {
+            if (simulationInterval) return; // Already running
+
+            // Transition NEW threads to RUNNABLE (like calling start())
+            threads.forEach(thread => {
+                if (thread.state === THREAD_STATES.NEW) {
+                    thread.state = THREAD_STATES.RUNNABLE;
+                    log(`Hilo ${thread.id} iniciado (start()). Estado: ${thread.state}`);
+                    updateThreadElement(thread);
+                }
+            });
+
+            simulationInterval = setInterval(simulationStep, timeSlice);
+            startButton.disabled = true;
+            resetButton.disabled = false;
+            log("Simulación iniciada.");
+        }
+
+        function resetSimulation() {
+            clearInterval(simulationInterval);
+            simulationInterval = null;
+            simulationTime = 0;
+            cpuAvailable = true;
+            runningThreadId = null;
+            threadIdCounter = 0;
+            logArea.innerHTML = '<h3>Log de Eventos</h3>'; // Clear log
+            initializeThreads();
+            updateCpuElement();
+            startButton.disabled = false;
+            resetButton.disabled = true;
+            log("Simulación reiniciada.");
+        }
+
+        function simulationStep() {
+            simulationTime += timeSlice;
+
+            // --- State Updates (Waiting -> Runnable) ---
+            threads.forEach(thread => {
+                if (thread.state === THREAD_STATES.TIMED_WAITING && simulationTime >= thread.waitingUntil) {
+                    thread.state = THREAD_STATES.RUNNABLE;
+                    thread.waitingUntil = 0;
+                    log(`Hilo ${thread.id} fin de espera (sleep). Estado: ${thread.state}`);
+                    updateThreadElement(thread);
+                }
+                // Update waiting time display for those still waiting
+                else if (thread.state === THREAD_STATES.TIMED_WAITING) {
+                     updateThreadElement(thread);
+                }
+            });
+
+            // --- CPU Scheduling (Simple Round Robin / Preemption) ---
+            // If a thread is running, check if it finishes its task or gets preempted
+            if (runningThreadId !== null) {
+                const currentThread = threads.find(t => t.id === runningThreadId);
+                if (currentThread) {
+                    const changedStateInTask = currentThread.task(); // Execute one step of the task
+                    updateThreadElement(currentThread);
+
+                    if (currentThread.workDone >= currentThread.totalWork) {
+                        currentThread.state = THREAD_STATES.TERMINATED;
+                        log(`Hilo ${currentThread.id} terminó ejecución (run() finalizado). Estado: ${currentThread.state}`);
+                        updateThreadElement(currentThread);
+                        cpuAvailable = true;
+                        runningThreadId = null;
+                    } else if (changedStateInTask) {
+                        // Task itself changed the state (e.g., to TIMED_WAITING)
+                        cpuAvailable = true;
+                        runningThreadId = null;
+                    } else {
+                        // Preemption: Put back to Runnable after time slice
+                        currentThread.state = THREAD_STATES.RUNNABLE;
+                        log(`Hilo ${currentThread.id} pierde CPU (preemption). Estado: ${currentThread.state}`);
+                        updateThreadElement(currentThread);
+                        cpuAvailable = true;
+                        runningThreadId = null;
+                    }
+                }
+            }
+
+            // If CPU is free, find a RUNNABLE thread to run
+            if (cpuAvailable) {
+                const runnableThreads = threads.filter(t => t.state === THREAD_STATES.RUNNABLE);
+                if (runnableThreads.length > 0) {
+                    // Simple scheduler: pick the first runnable one
+                    const nextThread = runnableThreads[0];
+                    nextThread.state = THREAD_STATES.RUNNING;
+                    runningThreadId = nextThread.id;
+                    cpuAvailable = false;
+                    log(`Hilo ${nextThread.id} obtiene CPU. Estado: ${nextThread.state}`);
+                    updateThreadElement(nextThread);
+                }
+            }
+
+            updateCpuElement();
+
+            // Check if all threads are terminated
+            if (threads.every(t => t.state === THREAD_STATES.TERMINATED)) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+                log("Todos los hilos han terminado. Simulación finalizada.");
+                startButton.disabled = true; // Keep disabled
+            }
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startSimulation);
+        resetButton.addEventListener('click', resetSimulation);
+        speedSlider.addEventListener('input', (e) => {
+            timeSlice = parseInt(e.target.value, 10);
+            // If running, clear and set new interval
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = setInterval(simulationStep, timeSlice);
+            }
+            log(`Velocidad ajustada a ${timeSlice}ms por ciclo.`);
+        });
+
+        // Initial Setup
+        resetButton.disabled = true;
+        initializeThreads();
+
+    </script>
+
+</body>
+</html>
+

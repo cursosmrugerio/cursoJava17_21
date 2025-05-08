@@ -1,0 +1,687 @@
+Entendido. Integrar los estados `BLOCKED` y `WAITING` de manera funcional requiere modificaciones significativas en la lógica de la simulación, especialmente en cómo los hilos interactúan y cómo el planificador (`simulationStep`) maneja estos nuevos estados.
+
+Aquí tienes el código actualizado del archivo `simulacion_hilos.html` con los estados `BLOCKED` y `WAITING` implementados. He añadido:
+1.  Un recurso compartido ("Impresora") para demostrar el estado `BLOCKED`.
+2.  Un mecanismo de señal simple ("DATOS_LISTOS") para demostrar el estado `WAITING`.
+3.  Nuevos hilos y modificación de existentes para usar estas mecánicas.
+4.  Actualizaciones en la UI para mostrar la razón del bloqueo o espera.
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación Animada Ciclo de Vida Hilos Java</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .simulation-container {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 800px; /* Puede necesitar más ancho con más hilos */
+            margin-bottom: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .controls button {
+            margin: 5px;
+        }
+        .cpu-area, .threads-area {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px dashed #ddd;
+            border-radius: 4px;
+        }
+        h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #555;
+        }
+        .cpu {
+            width: 80px;
+            height: 50px;
+            background-color: #ffcc80; /* Light orange */
+            border: 2px solid #ffa726; /* Orange */
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px auto;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .cpu.occupied {
+             background-color: #ef5350; /* Red */
+             border-color: #d32f2f;
+             color: white;
+        }
+        .thread {
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #e3f2fd; /* Light blue */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.3s ease;
+        }
+        .thread-info {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .thread-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .thread-state {
+            font-style: italic;
+            padding: 3px 6px;
+            border-radius: 3px;
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            min-width: 90px;
+            display: inline-block;
+        }
+        .thread-details {
+            font-size: 11px;
+            color: #333;
+            margin-top: 3px;
+        }
+        .thread-progress-bar {
+            width: 100px;
+            height: 10px;
+            background-color: #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .thread-progress {
+            height: 100%;
+            background-color: #4caf50; /* Green */
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* State Colors */
+        .state-NEW { background-color: #ce93d8; } /* Purple */
+        .state-RUNNABLE { background-color: #90caf9; } /* Blue */
+        .state-RUNNING { background-color: #81c784; } /* Green */
+        .state-TIMED_WAITING { background-color: #fff59d; color: #555; } /* Yellow */
+        .state-BLOCKED { background-color: #ef9a9a; } /* Red */
+        .state-WAITING { background-color: #ffcc80; color: #555;} /* Orange */
+        .state-TERMINATED { background-color: #bdbdbd; } /* Grey */
+
+        .log-area {
+            height: 150px;
+            overflow-y: scroll;
+            border: 1px solid #eee;
+            padding: 10px;
+            font-size: 12px;
+            background-color: #fafafa;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin-bottom: 4px;
+            border-bottom: 1px dotted #eee;
+            padding-bottom: 2px;
+        }
+        .log-time { color: #999; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>Simulación Ciclo de Vida Hilos Java</h1>
+
+    <div class="simulation-container">
+        <div class="controls">
+            <button id="startButton">Iniciar Simulación</button>
+            <button id="pauseButton">Pausar Simulación</button>
+            <button id="continueButton">Continuar Simulación</button>
+            <button id="resetButton">Reiniciar</button>
+            <div>
+                <label for="speedSlider">Velocidad:</label>
+                <input type="range" id="speedSlider" min="100" max="2000" value="700" step="100">
+            </div>
+        </div>
+
+        <div class="cpu-area">
+            <h3>CPU</h3>
+            <div id="cpu" class="cpu">Libre</div>
+        </div>
+
+        <div class="threads-area">
+            <h3>Hilos</h3>
+            <div id="threadsContainer">
+                </div>
+        </div>
+
+        <div class="log-area" id="logArea">
+            <h3>Log de Eventos</h3>
+        </div>
+    </div>
+
+    <script>
+        const threadsContainer = document.getElementById('threadsContainer');
+        const cpuElement = document.getElementById('cpu');
+        const logArea = document.getElementById('logArea');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const continueButton = document.getElementById('continueButton');
+        const resetButton = document.getElementById('resetButton');
+        const speedSlider = document.getElementById('speedSlider');
+
+        let simulationInterval;
+        let threads = [];
+        let simulationTime = 0;
+        let timeSlice = 700; // ms, initial speed
+        let cpuAvailable = true;
+        let runningThreadId = null;
+        let threadIdCounter = 0;
+        let isPaused = false;
+
+        const THREAD_STATES = {
+            NEW: 'NEW',
+            RUNNABLE: 'RUNNABLE',
+            RUNNING: 'RUNNING',
+            TIMED_WAITING: 'TIMED_WAITING',
+            BLOCKED: 'BLOCKED',
+            WAITING: 'WAITING',
+            TERMINATED: 'TERMINATED'
+        };
+
+        // Shared resource for BLOCKED state demonstration
+        let sharedResources = {
+            printer: {
+                name: "Impresora",
+                owner: null, // Thread ID of the owner
+                queue: []    // Thread IDs waiting for the printer
+            }
+        };
+
+        // Signals for WAITING state demonstration
+        let signals = {
+            DATOS_LISTOS: false
+        };
+
+        function log(message) {
+            const entry = document.createElement('div');
+            entry.classList.add('log-entry');
+            const timeSpan = document.createElement('span');
+            timeSpan.classList.add('log-time');
+            timeSpan.textContent = `[${(simulationTime / 1000).toFixed(1)}s]`;
+            entry.appendChild(timeSpan);
+            entry.appendChild(document.createTextNode(message));
+            logArea.insertBefore(entry, logArea.firstChild);
+        }
+
+        function createThreadElement(thread) {
+            const div = document.createElement('div');
+            div.classList.add('thread');
+            div.id = `thread-${thread.id}`;
+            div.innerHTML = `
+                <div class="thread-info">
+                    <div class="thread-name">Hilo ${thread.id} (${thread.name})</div>
+                    <div>Estado: <span class="thread-state state-${thread.state}">${thread.state}</span></div>
+                    <div class="thread-details"></div> <div class="thread-progress-bar">
+                        <div class="thread-progress" style="width: ${thread.progress}%;"></div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        function updateThreadElement(thread) {
+            const div = document.getElementById(`thread-${thread.id}`);
+            if (!div) return;
+
+            const stateSpan = div.querySelector('.thread-state');
+            const progressBar = div.querySelector('.thread-progress');
+            const detailsDiv = div.querySelector('.thread-details');
+
+            stateSpan.textContent = thread.state;
+            stateSpan.className = `thread-state state-${thread.state}`;
+            progressBar.style.width = `${thread.progress}%`;
+
+            let detailsText = '';
+            if (thread.state === THREAD_STATES.TIMED_WAITING && thread.waitingUntil > simulationTime) {
+                detailsText = `Esperando: ${Math.max(0, (thread.waitingUntil - simulationTime) / 1000).toFixed(1)}s`;
+            } else if (thread.state === THREAD_STATES.BLOCKED && thread.blockedResource) {
+                detailsText = `Bloqueado en: ${thread.blockedResource}`;
+            } else if (thread.state === THREAD_STATES.WAITING && thread.waitingSignal) {
+                detailsText = `Esperando señal: ${thread.waitingSignal}`;
+            }
+            detailsDiv.textContent = detailsText;
+            
+            div.style.backgroundColor = (thread.state === THREAD_STATES.RUNNING) ? '#c8e6c9' : '#e3f2fd';
+        }
+
+        function updateCpuElement() {
+            if (runningThreadId !== null) {
+                const currentThread = threads.find(t => t.id === runningThreadId);
+                cpuElement.textContent = currentThread ? `Hilo ${currentThread.id}` : 'Ocupado';
+                cpuElement.classList.add('occupied');
+            } else {
+                cpuElement.textContent = 'Libre';
+                cpuElement.classList.remove('occupied');
+            }
+        }
+        
+        function initializeThreads() {
+            threadIdCounter = 0;
+            sharedResources.printer.owner = null;
+            sharedResources.printer.queue = [];
+            signals.DATOS_LISTOS = false;
+
+            threads = [
+                {
+                    id: ++threadIdCounter, name: 'Calculador', state: THREAD_STATES.NEW, progress: 0, totalWork: 10, workDone: 0,
+                    task: function() { // Normal task, may send a signal
+                        log(`Hilo ${this.id} (${this.name}) calculando...`);
+                        this.workDone++;
+                        this.progress = (this.workDone / this.totalWork) * 100;
+
+                        if (this.workDone === 5 && !signals.DATOS_LISTOS) {
+                            log(`Hilo ${this.id} (${this.name}) *** ENVÍA SEÑAL: DATOS_LISTOS ***`);
+                            signals.DATOS_LISTOS = true;
+                            // Check if any thread is WAITING for this signal
+                            threads.forEach(t => {
+                                if (t.state === THREAD_STATES.WAITING && t.waitingSignal === 'DATOS_LISTOS') {
+                                    t.state = THREAD_STATES.RUNNABLE;
+                                    t.waitingSignal = null;
+                                    log(`Hilo ${t.id} (${t.name}) notificado y pasa a RUNNABLE.`);
+                                    updateThreadElement(t);
+                                }
+                            });
+                        }
+                         if (this.workDone === 3) { // Simulate sleep
+                            const sleepDuration = 1500 + Math.random() * 1000;
+                            this.state = THREAD_STATES.TIMED_WAITING;
+                            this.waitingUntil = simulationTime + sleepDuration;
+                            log(`Hilo ${this.id} (${this.name}) llama a sleep(${sleepDuration/1000}s). Estado: ${this.state}`);
+                            return true; // State changed
+                        }
+                        return false;
+                    }
+                },
+                {
+                    id: ++threadIdCounter, name: 'Impresor A', state: THREAD_STATES.NEW, progress: 0, totalWork: 6, workDone: 0,
+                    resourceNeeded: 'printer', workWithResource: 0, workWithResourceTotal: 3, hasResource: false,
+                    task: function() { // Tries to use the printer
+                        if (this.state === THREAD_STATES.BLOCKED) return false; // Do nothing if blocked
+
+                        if (!this.hasResource) {
+                            if (sharedResources.printer.owner === null) {
+                                sharedResources.printer.owner = this.id;
+                                this.hasResource = true;
+                                this.blockedResource = null;
+                                log(`Hilo ${this.id} (${this.name}) Adquirió ${sharedResources.printer.name}.`);
+                            } else {
+                                log(`Hilo ${this.id} (${this.name}) Intenta usar ${sharedResources.printer.name} pero está ocupada por Hilo ${sharedResources.printer.owner}. Bloqueándose.`);
+                                this.state = THREAD_STATES.BLOCKED;
+                                this.blockedResource = sharedResources.printer.name;
+                                if (!sharedResources.printer.queue.includes(this.id)) {
+                                    sharedResources.printer.queue.push(this.id);
+                                }
+                                return true; // State changed
+                            }
+                        }
+
+                        if (this.hasResource) {
+                            log(`Hilo ${this.id} (${this.name}) trabajando con ${sharedResources.printer.name}...`);
+                            this.workWithResource++;
+                            this.workDone++; // General progress
+                            this.progress = (this.workDone / this.totalWork) * 100;
+                            if (this.workWithResource >= this.workWithResourceTotal) {
+                                log(`Hilo ${this.id} (${this.name}) Liberó ${sharedResources.printer.name}.`);
+                                sharedResources.printer.owner = null;
+                                this.hasResource = false;
+                                // Check printer queue
+                                if (sharedResources.printer.queue.length > 0) {
+                                    const nextThreadId = sharedResources.printer.queue.shift();
+                                    const nextThread = threads.find(t => t.id === nextThreadId);
+                                    if (nextThread) {
+                                        nextThread.state = THREAD_STATES.RUNNABLE;
+                                        nextThread.blockedResource = null; // Clear reason for block
+                                        log(`Hilo ${nextThread.id} (${nextThread.name}) desbloqueado de ${sharedResources.printer.name} y pasa a RUNNABLE.`);
+                                        updateThreadElement(nextThread);
+                                    }
+                                }
+                            }
+                        } else { // Should not happen if blocked logic is correct
+                             log(`Hilo ${this.id} (${this.name}) esperando recurso (no debería estar RUNNING).`);
+                        }
+                        return false;
+                    }
+                },
+                {
+                    id: ++threadIdCounter, name: 'Procesador Esperador', state: THREAD_STATES.NEW, progress: 0, totalWork: 8, workDone: 0,
+                    waitsForSignal: 'DATOS_LISTOS', signaled: false,
+                    task: function() { // Waits for a signal
+                        if (this.state === THREAD_STATES.WAITING) return false; // Do nothing if waiting
+
+                        if (this.workDone < 2) {
+                            log(`Hilo ${this.id} (${this.name}) procesando datos iniciales...`);
+                            this.workDone++;
+                        } else if (!this.signaled) {
+                            if (signals.DATOS_LISTOS) {
+                                log(`Hilo ${this.id} (${this.name}) Señal DATOS_LISTOS ya activa. Continuando.`);
+                                this.signaled = true;
+                            } else {
+                                log(`Hilo ${this.id} (${this.name}) Entra en estado WAITING por señal: ${this.waitsForSignal}.`);
+                                this.state = THREAD_STATES.WAITING;
+                                this.waitingSignal = this.waitsForSignal;
+                                return true; // State changed
+                            }
+                        }
+                        
+                        if (this.signaled) {
+                             log(`Hilo ${this.id} (${this.name}) continuando procesamiento post-señal...`);
+                             this.workDone++;
+                        }
+                        this.progress = (this.workDone / this.totalWork) * 100;
+                        return false;
+                    }
+                },
+                 { // Another thread to compete for the printer
+                    id: ++threadIdCounter, name: 'Impresor B', state: THREAD_STATES.NEW, progress: 0, totalWork: 5, workDone: 0,
+                    resourceNeeded: 'printer', workWithResource: 0, workWithResourceTotal: 2, hasResource: false,
+                    task: function() { // Tries to use the printer
+                        if (this.state === THREAD_STATES.BLOCKED) return false;
+
+                        if (!this.hasResource) {
+                            if (sharedResources.printer.owner === null) {
+                                sharedResources.printer.owner = this.id;
+                                this.hasResource = true;
+                                this.blockedResource = null;
+                                log(`Hilo ${this.id} (${this.name}) Adquirió ${sharedResources.printer.name}.`);
+                            } else {
+                                log(`Hilo ${this.id} (${this.name}) Intenta usar ${sharedResources.printer.name} pero está ocupada por Hilo ${sharedResources.printer.owner}. Bloqueándose.`);
+                                this.state = THREAD_STATES.BLOCKED;
+                                this.blockedResource = sharedResources.printer.name;
+                                if (!sharedResources.printer.queue.includes(this.id)) {
+                                    sharedResources.printer.queue.push(this.id);
+                                }
+                                return true; // State changed
+                            }
+                        }
+
+                        if (this.hasResource) {
+                            log(`Hilo ${this.id} (${this.name}) trabajando con ${sharedResources.printer.name}...`);
+                            this.workWithResource++;
+                            this.workDone++;
+                            this.progress = (this.workDone / this.totalWork) * 100;
+                            if (this.workWithResource >= this.workWithResourceTotal) {
+                                log(`Hilo ${this.id} (${this.name}) Liberó ${sharedResources.printer.name}.`);
+                                sharedResources.printer.owner = null;
+                                this.hasResource = false;
+                                if (sharedResources.printer.queue.length > 0) {
+                                    const nextThreadId = sharedResources.printer.queue.shift();
+                                    const nextThread = threads.find(t => t.id === nextThreadId);
+                                    if (nextThread) {
+                                        nextThread.state = THREAD_STATES.RUNNABLE;
+                                        nextThread.blockedResource = null;
+                                        log(`Hilo ${nextThread.id} (${nextThread.name}) desbloqueado de ${sharedResources.printer.name} y pasa a RUNNABLE.`);
+                                        updateThreadElement(nextThread);
+                                    }
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                }
+            ];
+
+            threadsContainer.innerHTML = '';
+            threads.forEach(thread => {
+                threadsContainer.appendChild(createThreadElement(thread));
+                updateThreadElement(thread); // Initial full update
+                log(`Hilo ${thread.id} (${thread.name}) creado. Estado: ${thread.state}`);
+            });
+        }
+
+        function startSimulation() {
+            if (simulationInterval || isPaused && simulationInterval) return;
+            isPaused = false;
+
+            threads.forEach(thread => {
+                if (thread.state === THREAD_STATES.NEW) {
+                    thread.state = THREAD_STATES.RUNNABLE;
+                    log(`Hilo ${thread.id} (${thread.name}) iniciado (start()). Estado: ${thread.state}`);
+                    updateThreadElement(thread);
+                }
+            });
+
+            simulationInterval = setInterval(simulationStep, timeSlice);
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            continueButton.disabled = true;
+            resetButton.disabled = false;
+            log("Simulación iniciada.");
+        }
+
+        function pauseSimulation() {
+            if (!simulationInterval) return;
+            isPaused = true;
+            clearInterval(simulationInterval);
+            simulationInterval = null; // Important to clear it
+            log("Simulación pausada.");
+            startButton.disabled = true;
+            pauseButton.disabled = true;
+            continueButton.disabled = false;
+            resetButton.disabled = false;
+        }
+
+        function continueSimulation() {
+            if (simulationInterval || !isPaused) return; // Only continue if paused and not already running
+            isPaused = false;
+            simulationInterval = setInterval(simulationStep, timeSlice);
+            log("Simulación continuada.");
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            continueButton.disabled = true;
+            resetButton.disabled = false;
+        }
+
+        function resetSimulation() {
+            clearInterval(simulationInterval);
+            simulationInterval = null;
+            isPaused = false;
+            simulationTime = 0;
+            cpuAvailable = true;
+            runningThreadId = null;
+            
+            logArea.innerHTML = '<h3>Log de Eventos</h3>';
+            initializeThreads(); // This will re-initialize threads and shared resources
+            updateCpuElement();
+
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            continueButton.disabled = true;
+            resetButton.disabled = true;
+            log("Simulación reiniciada.");
+        }
+
+        function simulationStep() {
+            simulationTime += timeSlice;
+
+            // --- State Updates (non-CPU bound: TIMED_WAITING -> RUNNABLE) ---
+            threads.forEach(thread => {
+                if (thread.state === THREAD_STATES.TIMED_WAITING && simulationTime >= thread.waitingUntil) {
+                    thread.state = THREAD_STATES.RUNNABLE;
+                    thread.waitingUntil = 0;
+                    log(`Hilo ${thread.id} (${thread.name}) fin de espera (sleep). Estado: ${thread.state}`);
+                }
+                 // WAITING threads are handled by signals, BLOCKED by resource release.
+                updateThreadElement(thread); // Update all for display changes (e.g. TIMED_WAITING countdown)
+            });
+
+            // --- CPU Scheduling ---
+            if (runningThreadId !== null) {
+                const currentThread = threads.find(t => t.id === runningThreadId);
+                if (currentThread) {
+                    // Before task, ensure it's still RUNNING (could have changed by signal/resource release from another thread's task)
+                    if (currentThread.state !== THREAD_STATES.RUNNING) {
+                        log(`Hilo ${currentThread.id} (${currentThread.name}) ya no está RUNNING (estado: ${currentThread.state}) antes de ejecutar tarea. CPU se libera.`);
+                        cpuAvailable = true;
+                        runningThreadId = null;
+                    } else {
+                        const changedStateInTask = currentThread.task(); // Execute one step
+                        updateThreadElement(currentThread);
+
+                        if (currentThread.workDone >= currentThread.totalWork && currentThread.state !== THREAD_STATES.TERMINATED) {
+                            if (currentThread.hasResource) { // Ensure resource is released if thread terminates holding it
+                                log(`Hilo ${currentThread.id} (${currentThread.name}) terminando y liberando ${sharedResources.printer.name}.`);
+                                sharedResources.printer.owner = null;
+                                currentThread.hasResource = false;
+                                // Check queue again
+                                if (sharedResources.printer.queue.length > 0) {
+                                    const nextThreadId = sharedResources.printer.queue.shift();
+                                    const nextThreadToUnblock = threads.find(t => t.id === nextThreadId);
+                                    if (nextThreadToUnblock) {
+                                        nextThreadToUnblock.state = THREAD_STATES.RUNNABLE;
+                                        nextThreadToUnblock.blockedResource = null;
+                                        log(`Hilo ${nextThreadToUnblock.id} (${nextThreadToUnblock.name}) desbloqueado de ${sharedResources.printer.name} y pasa a RUNNABLE.`);
+                                        updateThreadElement(nextThreadToUnblock);
+                                    }
+                                }
+                            }
+                            currentThread.state = THREAD_STATES.TERMINATED;
+                            log(`Hilo ${currentThread.id} (${currentThread.name}) terminó ejecución. Estado: ${currentThread.state}`);
+                            updateThreadElement(currentThread);
+                            cpuAvailable = true;
+                            runningThreadId = null;
+                        } else if (changedStateInTask) { // Task itself changed state (e.g., to TIMED_WAITING, BLOCKED, WAITING)
+                            cpuAvailable = true;
+                            runningThreadId = null;
+                        } else if (currentThread.state === THREAD_STATES.RUNNING) { // Preemption if still running
+                            currentThread.state = THREAD_STATES.RUNNABLE;
+                            log(`Hilo ${currentThread.id} (${currentThread.name}) pierde CPU (preemption). Estado: ${currentThread.state}`);
+                            updateThreadElement(currentThread);
+                            cpuAvailable = true;
+                            runningThreadId = null;
+                        }
+                    }
+                } else {
+                    // Current running thread not found (should not happen)
+                    cpuAvailable = true;
+                    runningThreadId = null;
+                }
+            }
+
+            // If CPU is free, find a RUNNABLE thread
+            if (cpuAvailable) {
+                // Simple scheduler: pick the first RUNNABLE. Consider priorities or fairness later.
+                const runnableThreads = threads.filter(t => t.state === THREAD_STATES.RUNNABLE);
+                if (runnableThreads.length > 0) {
+                    const nextThread = runnableThreads[0]; 
+                    nextThread.state = THREAD_STATES.RUNNING;
+                    runningThreadId = nextThread.id;
+                    cpuAvailable = false;
+                    log(`Hilo ${nextThread.id} (${nextThread.name}) obtiene CPU. Estado: ${nextThread.state}`);
+                    updateThreadElement(nextThread);
+                }
+            }
+
+            updateCpuElement();
+
+            if (threads.every(t => t.state === THREAD_STATES.TERMINATED)) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+                log("Todos los hilos han terminado. Simulación finalizada.");
+                startButton.disabled = true;
+                pauseButton.disabled = true;
+                continueButton.disabled = true;
+                resetButton.disabled = false;
+            }
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startSimulation);
+        pauseButton.addEventListener('click', pauseSimulation);
+        continueButton.addEventListener('click', continueSimulation);
+        resetButton.addEventListener('click', resetSimulation);
+        speedSlider.addEventListener('input', (e) => {
+            timeSlice = parseInt(e.target.value, 10);
+            if (simulationInterval && !isPaused) { // Only if running and not paused
+                clearInterval(simulationInterval);
+                simulationInterval = setInterval(simulationStep, timeSlice);
+            }
+            log(`Velocidad ajustada a ${timeSlice}ms por ciclo.`);
+        });
+
+        // Initial Setup
+        pauseButton.disabled = true;
+        continueButton.disabled = true;
+        resetButton.disabled = true; // Will be enabled by reset or start
+        initializeThreads();
+
+    </script>
+</body>
+</html>
+```
+
+**Cambios y Adiciones Clave:**
+
+1.  **Recursos Compartidos y Señales Globales**:
+    * `sharedResources`: Objeto para manejar recursos como la "Impresora", con su propietario y cola de espera.
+    * `signals`: Objeto para manejar señales, como `DATOS_LISTOS`.
+
+2.  **Nuevas Propiedades de Hilo**:
+    * `resourceNeeded`: Nombre del recurso que un hilo podría necesitar.
+    * `workWithResource`, `workWithResourceTotal`: Para simular trabajo mientras se posee un recurso.
+    * `hasResource`: Booleano, si el hilo posee actualmente el recurso.
+    * `blockedResource`: Nombre del recurso por el cual el hilo está bloqueado (para UI).
+    * `waitsForSignal`: Nombre de la señal que un hilo está esperando.
+    * `signaled`: Booleano, si la señal esperada ha sido recibida por el hilo.
+    * `waitingSignal`: Nombre de la señal que el hilo está esperando activamente (para UI).
+
+3.  **`initializeThreads()` Modificada**:
+    * Se reinician los recursos compartidos y señales.
+    * Se definen nuevos hilos (`Calculador`, `Impresor A`, `Procesador Esperador`, `Impresor B`) con lógica para usar estos nuevos mecanismos:
+        * **Calculador**: Realiza cálculos y, en cierto punto, establece `signals.DATOS_LISTOS = true;`, lo que puede despertar a un hilo en `WAITING`. También tiene un `sleep`.
+        * **Impresor A / Impresor B**: Intentan adquirir `sharedResources.printer`. Si está ocupada, entran en `BLOCKED` y se añaden a la cola. Al liberar, se comprueba la cola para despertar al siguiente.
+        * **Procesador Esperador**: Realiza un trabajo inicial, luego entra en `WAITING` por la señal `DATOS_LISTOS`. Continúa su trabajo una vez que la señal es verdadera.
+
+4.  **`updateThreadElement()` Modificada**:
+    * Se añadió una nueva `div` con clase `thread-details`.
+    * Muestra la razón del bloqueo (`Bloqueado en: ...`) o de la espera (`Esperando señal: ...`) o el tiempo restante de `TIMED_WAITING`.
+
+5.  **`simulationStep()` Modificada**:
+    * **Lógica de Señales**: Cuando un hilo (como `Calculador`) establece una señal, recorre los hilos para despertar a cualquiera que esté en `WAITING` por esa señal.
+    * **Lógica de Recursos (en `task` y al terminar)**:
+        * En la `task` de los hilos que usan recursos: se intenta adquirir. Si no, `BLOCKED`.
+        * Al liberar un recurso (en `task` o si el hilo termina mientras lo posee): se revisa la cola del recurso y se pasa el siguiente hilo `BLOCKED` a `RUNNABLE`.
+    * Un hilo que estaba `RUNNING` pero cambia a `BLOCKED` o `WAITING` dentro de su `task` ahora libera la CPU correctamente.
+    * Se añadió una comprobación por si un hilo que tiene la CPU asignada cambia de estado (ej. a `RUNNABLE` por una señal externa) antes de que su `task` se ejecute en este ciclo.
+
+6.  **Ajustes Menores**:
+    * Valor inicial de `timeSlice` aumentado un poco para observar mejor las interacciones.
+    * Comentarios adicionales para explicar la lógica.
+
+**Para Probar y Observar:**
+
+* Inicia la simulación.
+* Observa cómo los hilos "Impresor A" e "Impresor B" compiten por la "Impresora". Uno se bloqueará mientras el otro la usa.
+* Observa cómo "Procesador Esperador" entra en estado `WAITING`.
+* Observa cómo "Calculador", después de un tiempo, envía la señal `DATOS_LISTOS`, lo que debería hacer que "Procesador Esperador" pase a `RUNNABLE` y luego a `RUNNING`.
+* Usa los botones de Pausa/Continuar y el deslizador de velocidad para analizar los cambios de estado.
+
+Esta implementación añade una capa significativa de complejidad, reflejando de forma más cercana los desafíos de la programación concurrente. ¡Espero que te sea útil!

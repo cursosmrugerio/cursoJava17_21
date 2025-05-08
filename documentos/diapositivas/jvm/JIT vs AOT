@@ -1,0 +1,137 @@
+# JIT vs AOT explicado para desarrolladores junior
+
+Imagina que estás preparando una cena para invitados. Hay dos formas de hacerlo:
+
+## JIT (Just-In-Time) - Cocinar mientras llegan los invitados
+
+### ¿Qué es JIT?
+JIT (Just-In-Time) significa "justo a tiempo". En programación, es como cocinar los platos mientras los invitados van llegando y pidiendo comida.
+
+### Cómo funciona JIT (con la JVM tradicional):
+
+1. **Primero interpreta**: Cuando ejecutas tu programa Java, la JVM primero lee el bytecode línea por línea (como leer una receta sin cocinar).
+
+2. **Observa patrones**: La JVM observa qué partes del código se ejecutan frecuentemente (como notar que muchos invitados piden pasta).
+
+3. **Optimiza sobre la marcha**: Las partes "calientes" del código (las más usadas) se compilan a código máquina nativo (es como preparar una olla grande de pasta al ver que muchos la piden).
+
+4. **Mejora con el tiempo**: Cuanto más tiempo se ejecuta, más optimizado se vuelve (como un chef que mejora sus recetas con la experiencia).
+
+### Ventajas de JIT:
+- **Adaptabilidad**: Se optimiza según el comportamiento real del programa
+- **Mejora progresiva**: Cuanto más tiempo se ejecuta, más rápido se vuelve
+- **Flexibilidad**: Puede adaptarse a cambios en la ejecución
+
+### Desventajas de JIT:
+- **Arranque lento**: Tarda en "calentarse" (warm-up)
+- **Consumo de recursos**: Necesita memoria y CPU para el compilador
+- **Rendimiento variable**: Al principio es más lento, luego mejora
+
+## AOT (Ahead-Of-Time) - Cocinar todo antes de que lleguen los invitados
+
+### ¿Qué es AOT?
+AOT (Ahead-Of-Time) significa "por adelantado". En programación, es como cocinar todos los platos completamente antes de que lleguen los invitados.
+
+### Cómo funciona AOT (con GraalVM Native Image):
+
+1. **Compilación anticipada**: Tu código Java se compila completamente a código máquina nativo **antes** de distribuirlo (cocinas todo el menú por adelantado).
+
+2. **Análisis estático**: Durante la compilación, analiza todo el código para optimizarlo (decides las mejores recetas y técnicas de cocina).
+
+3. **Generación de ejecutable**: Produce un archivo ejecutable específico para cada sistema operativo (como tener los platos ya servidos y listos).
+
+4. **Ejecución directa**: El programa se ejecuta directamente, sin necesidad de JVM (los invitados comen inmediatamente sin esperar).
+
+### Ventajas de AOT:
+- **Arranque instantáneo**: Inicia mucho más rápido porque ya está todo compilado
+- **Menor uso de memoria**: No necesita cargar un compilador en tiempo de ejecución
+- **Rendimiento predecible**: El rendimiento es constante desde el inicio
+- **Ejecutables independientes**: No requiere instalar la JVM
+
+### Desventajas de AOT:
+- **Menos adaptable**: No puede optimizarse basándose en el comportamiento real
+- **Compilación más lenta**: Toma más tiempo compilar inicialmente
+- **Limitaciones**: Algunas características dinámicas de Java (como la reflexión) requieren configuración especial
+- **Ejecutables más grandes**: Aunque usa menos memoria en ejecución, los archivos pueden ser grandes
+
+## Comparación práctica con un ejemplo concreto
+
+Imagina una aplicación sencilla que suma números:
+
+### Con JIT (JVM tradicional):
+```java
+public class Sumador {
+    public static void main(String[] args) {
+        // El programa arranca, la JVM carga el bytecode
+        // Primero interpreta y es más lento
+        int suma = 0;
+        for (int i = 0; i < 1000000; i++) {
+            suma += i;
+            // Con el tiempo, la JVM nota que este bucle 
+            // se ejecuta mucho y lo compila a código nativo
+        }
+        System.out.println("La suma es: " + suma);
+    }
+}
+```
+
+- **Primera ejecución**: Lenta (interpretación)
+- **Después de varias ejecuciones**: Rápida (código compilado)
+- **Requiere**: JVM instalada (100+ MB)
+- **Tamaño del archivo .jar**: Pequeño (KB)
+- **Memoria en ejecución**: ~50-300MB (incluye la JVM)
+
+### Con AOT (GraalVM Native Image):
+```java
+// El mismo código se compila previamente a un ejecutable nativo
+public class Sumador {
+    public static void main(String[] args) {
+        int suma = 0;
+        for (int i = 0; i < 1000000; i++) {
+            suma += i;
+        }
+        System.out.println("La suma es: " + suma);
+    }
+}
+```
+
+- **Compilación**: Toma más tiempo (minutos)
+- **Todas las ejecuciones**: Rápidas desde el inicio
+- **No requiere**: JVM instalada
+- **Tamaño del ejecutable**: Mayor (MB)
+- **Memoria en ejecución**: ~5-30MB (sin JVM)
+
+## ¿Cuándo usar cada uno?
+
+### JIT es mejor para:
+- **Aplicaciones de larga duración**: Servidores, aplicaciones de escritorio
+- **Desarrollo y depuración**: Ciclos rápidos de desarrollo
+- **Código con muchas características dinámicas**: Reflexión, carga de clases dinámica
+- **Cuando la portabilidad es clave**: Un solo JAR para todas las plataformas
+
+### AOT es mejor para:
+- **Microservicios**: Arranque rápido y bajo consumo de memoria
+- **Funciones serverless**: Donde cada milisegundo cuenta
+- **Aplicaciones CLI**: Herramientas de línea de comandos
+- **Entornos con recursos limitados**: Contenedores, dispositivos IoT
+- **Cuando el tiempo de inicio es crítico**: APIs que escalan horizontalmente
+
+## Analogía final
+
+### JIT es como un estudiante que:
+- Estudia durante el examen
+- Empieza lento pero mejora
+- Se adapta a preguntas sorpresa
+- Necesita más tiempo total
+
+### AOT es como un estudiante que:
+- Estudia todo antes del examen
+- Contesta rápido desde el principio
+- No se adapta bien a preguntas inesperadas
+- Invierte más tiempo en preparación
+
+## Conclusión
+
+Tanto JIT como AOT tienen sus propios casos de uso. Como desarrollador junior, es importante entender que no hay una solución "mejor" en general, sino que cada enfoque tiene sus ventajas según el tipo de aplicación que estés construyendo.
+
+¿Hay algún aspecto particular sobre JIT vs AOT que te gustaría explorar más a fondo?
