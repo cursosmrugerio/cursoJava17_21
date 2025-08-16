@@ -18,7 +18,10 @@ public class Principal2 {
 		System.out.println(nValor); 
 	
 		NumberFormat frFormat = NumberFormat.getInstance(Locale.FRANCE);
-		System.out.println(frFormat.parse(valor));
+		nValor = frFormat.parse(valor);
+		System.out.println(nValor);
+		
+		System.out.println("*******");
 
 		NumberFormat compUs = 
 				NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.LONG);

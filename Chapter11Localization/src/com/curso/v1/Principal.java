@@ -20,25 +20,26 @@ public class Principal {
 		System.out.println("Locale.GERMANY: "+deFormat.format(asistentesPorMes)); // 266.666
 
 		NumberFormat frFormat = NumberFormat.getInstance(Locale.FRANCE);
-		System.out.println("Locale.FRANCE: "+frFormat.format(asistentesPorMes));
+		System.out.println("Locale.FRANCE: "+frFormat.format(asistentesPorMes)); // 266 666
+		
 		
 		double precio = 48;
-		
 		NumberFormat moneda = NumberFormat.getCurrencyInstance(Locale.US);
 		System.out.println("Locale.US: "+moneda.format(precio)); // $48.00
 
 		moneda = NumberFormat.getCurrencyInstance(Locale.UK);
-		System.out.println("Locale.UK: "+moneda.format(precio)); 
+		System.out.println("Locale.UK: "+moneda.format(precio)); //£48.00
 		
 		moneda = NumberFormat.getCurrencyInstance(Locale.FRANCE);
-        System.out.println("Locale.FRANCE: "+moneda.format(precio)); 
+        System.out.println("Locale.FRANCE: "+moneda.format(precio)); //48,00 €
 
+        
         double tazaExito = 0.802;
         NumberFormat porcent = NumberFormat.getPercentInstance(Locale.US);
-        System.out.println("Locale.US: "+porcent.format(tazaExito)); 
+        System.out.println("Locale.US: "+porcent.format(tazaExito)); //80%
         
         porcent = NumberFormat.getPercentInstance(Locale.FRANCE);
-        System.out.println("Locale.FRANCE: "+porcent.format(tazaExito));
+        System.out.println("Locale.FRANCE: "+porcent.format(tazaExito)); //80 %
 
 
 	}

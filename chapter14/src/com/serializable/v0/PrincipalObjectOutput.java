@@ -36,7 +36,9 @@ public class PrincipalObjectOutput {
 	}
 
 	static void saveToFile(List<Gorilla> gorillas, File dataFile) throws IOException {
-		try (var out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(dataFile)))) {
+		try (ObjectOutputStream out = new ObjectOutputStream(
+				       				  new BufferedOutputStream(
+				       				  new FileOutputStream(dataFile)))) {
 
 			for (Gorilla gorilla : gorillas)
 

@@ -27,7 +27,9 @@ public class PrincipalObjectInput {
 
 		var gorillas = new ArrayList<Gorilla>();
 
-		try (var in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(dataFile)))) {
+		try (ObjectInputStream in = new ObjectInputStream(
+									new BufferedInputStream(
+									new FileInputStream(dataFile)))) {
 			while (true) {
 				var object = in.readObject();
 				if (object instanceof Gorilla g)
